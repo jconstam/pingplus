@@ -1,10 +1,13 @@
 #include <iostream>
 
+#include "ping.hpp"
+
 using namespace std;
 
 int main( int argc, char* argv[ ] ) 
 {
-    cout << "Execuable name: " << argv[ 0 ] << endl;
+    Ping myPing( "127.0.0.1" );
+    myPing.Send( );
 
     return 0;
 }

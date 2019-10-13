@@ -7,7 +7,9 @@ set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror" )
 project( ${MAIN_PROJECT_NAME} )
 
 set( SOURCES
-    main.cpp
+    ${PROJECT_SOURCE_DIR}/ping.cpp
+
+    ${PROJECT_SOURCE_DIR}/main.cpp
 )
 
 include_directories(
