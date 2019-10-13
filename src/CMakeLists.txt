@@ -20,3 +20,7 @@ add_executable(
     ${MAIN_PROJECT_NAME} 
     ${SOURCES}
 )
+target_link_libraries( 
+    ${MAIN_PROJECT_NAME}
+    pthread
+)

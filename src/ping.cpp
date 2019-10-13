@@ -1,3 +1,4 @@
+#include <thread>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -8,15 +9,23 @@ using namespace std;
 
 #define BUFFER_SIZE     ( 128U )
 
-Ping::Ping( const std::string& hostname ): m_hostname( hostname )
+static void pingThread( const string& hostname );
+
+Ping::Ping( const string& hostname ): m_hostname( hostname )
 {
 
 }
 
 void Ping::Send( )
 {
+    thread doPing( &( pingThread ), m_hostname );
+    doPing.join( );
+}
+
+static void pingThread( const string& hostname )
+{
     string result = "";
-    string cmd = "ping -q -i 0.2 -c 10 " + m_hostname;
+    string cmd = "ping -q -i 0.2 -c 1 " + hostname;
 
     FILE* pipe = popen( cmd.c_str( ), "r" );
     if( pipe )
@@ -31,28 +40,31 @@ void Ping::Send( )
         }
         
         PingData data( result );
+        data.PrintStats( );
     }
 }
 
-PingData::PingData( const std::string& rawData )
+PingData::PingData( const string& rawData )
 {
-    int txEnd = rawData.find( "packets transmitted" ) - 1U;
-    int txStart = rawData.rfind( "\n", txEnd ) + 1U;
-    string txCountString = rawData.substr( txStart, txEnd - txStart );
-    m_txCount = stoi( txCountString, nullptr );
+    m_txCount = extractInt( rawData, "\n", "packets transmitted" );
+    m_rxCount = extractInt( rawData, ",", "received" );
+    sscanf( extractString( rawData, "rtt min/avg/max/mdev =", " ms" ).c_str( ), "%f/%f/%f/%f", &( m_rttMin ), &( m_rttAvg ), &( m_rttMax ), &( m_rttMDev ) );
+}
 
-    int rxEnd = rawData.find( "received" ) - 1U;
-    int rxStart = rawData.rfind( ",", rxEnd ) + 2U;
-    string rxCountString = rawData.substr( rxStart, rxEnd - rxStart );
-    m_rxCount = stoi( rxCountString, nullptr );
+void PingData::PrintStats( void )
+{
+    cout << "Sent: " << m_txCount << " - Received: " << m_rxCount << endl;
+    cout << "Min: " << m_rttMin << " - Avg: " << m_rttAvg << " - Max: " << m_rttMax << " - MDev: " << m_rttMDev << endl;
+}
 
-    int rttStart = rawData.find( "rtt" ) + strlen( "rtt min/avg/max/mdev = " );
-    int rttEnd = rawData.find( "\n", rttStart ) - 3U;
-    string rttStats = rawData.substr( rttStart, rttEnd - rttStart );
+string PingData::extractString( const string& rawData, const string& before, const string& after )
+{
+    int end = rawData.find( after );
+    int start = rawData.rfind( before, end ) + strlen( before.c_str( ) );
+    return rawData.substr( start, end - start );    
+}
 
-    sscanf( rttStats.c_str( ), "%f/%f/%f/%f", &( m_rttMin ), &( m_rttAvg ), &( m_rttMax ), &( m_rttMDev ) );
-
-    cout << "TX: " << m_txCount << endl;
-    cout << "RX: " << m_rxCount << endl;
-    cout << "Min: " << m_rttMin << " Avg: " << m_rttAvg << " Max: " << m_rttMax << " MDev: " << m_rttMDev << endl;
+int PingData::extractInt( const std::string& rawData, const std::string& before, const std::string& after )
+{
+    return stoi( extractString( rawData, before, after ), nullptr );
 }
