@@ -1,0 +1,20 @@
+language: cpp
+compiler: gcc
+dist: xenial
+python:
+  - "3.6"
+
+addons:
+  apt:
+    packages:
+      cmake
+      python-pip
+      lcov
+      valgrind
+      cppcheck
+
+install:
+  - pip install --user -r requirements.txt
+
+script:
+  - make -j
